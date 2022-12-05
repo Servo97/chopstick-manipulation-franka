@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot name="bowl">
+  <material name="bowl_color">
+      <color rgba="0 0 1 0.7" />
+  </material>
+  <link name="baselink" concave="yes">
+    <contact>
+        <lateral_friction value="0.4" />
+        <rolling_friction value="0.001" />
+    </contact>
+    <inertial>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0" />
+        <mass value="0.2" />
+        <inertia ixx="0.000008" iyy="0.000014" izz="0.000008" ixy="0" ixz="-0.0000009" iyz="0"/>
+    </inertial>
+    <visual>
+        <origin rpy="-1.5708 0 0" xyz="0 0 0" />
+        <geometry>
+            <mesh filename="package://scene/bowl2.stl" scale="0.005 0.005 0.005" />
+        </geometry>
+        <material name="bowl_color" />
+    </visual>
+    <collision>
+        <origin rpy="-1.5708 0 0" xyz="0 0 0" />
+        <geometry>
+            <mesh filename="package://scene/bowl2.stl" scale="0.005 0.005 0.005" />
+        </geometry>
+    </collision>
+    
+  </link>
+</robot>
