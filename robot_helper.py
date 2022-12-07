@@ -38,7 +38,7 @@ class Robot:
         pb_utils.connect(use_gui=True)
         pb_utils.add_data_path()
         p.setGravity(0, 0, -9.81)
-        pb_utils.load_pybullet("plane.urdf")
+        self.plane = pb_utils.load_pybullet("plane.urdf")
         # pb_utils.load_pybullet("assets/franka_description/robots/nugget.urdf")
         p.setTimeStep(1/1000, physicsClientId=pb_utils.CLIENT)
         p.setPhysicsEngineParameter(fixedTimeStep=1./1000.,solverResidualThreshold=0, physicsClientId=pb_utils.CLIENT)
@@ -51,15 +51,23 @@ class Robot:
                         0.000000, 0.000000, 0.000000, 1.000000], useFixedBase=True, globalScaling=1, flags=p.URDF_USE_SELF_COLLISION)
             pb_utils.set_dynamics(self.franka, 8, linearDamping=0, lateralFriction=1)
             pb_utils.set_dynamics(self.franka, 9, linearDamping=0, lateralFriction=1)
-            self.table = p.loadURDF("assets/table_collision/table.urdf", basePosition=[0,0,0.015], baseOrientation=[0, 0, 0.707, 0.707], globalScaling=0.3)
+            self.table1 = p.loadURDF("assets/table_collision/table.urdf", basePosition=[0,0,0.015], baseOrientation=[0, 0, 0.707, 0.707], globalScaling=0.3)
             self.cup_vis = p.createVisualShape(p.GEOM_MESH, fileName="assets/scene/bowl2.stl", meshScale=meshScale, rgbaColor=[0, 0, 1, 0.85],)
             self.cup_coll = p.createCollisionShape(p.GEOM_MESH, fileName="assets/scene/bowl2.stl", meshScale=meshScale,flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
-            p.createMultiBody(baseMass=1,baseInertialFramePosition=[0, 0, 0],baseCollisionShapeIndex=self.cup_coll,baseVisualShapeIndex=self.cup_vis,
-                                basePosition=shift, baseOrientation=[-0.7071068, 0, 0, 0.7071068],useMaximalCoordinates=True)
+            self.cup_1 = p.createMultiBody(baseMass=1,baseInertialFramePosition=[0, 0, 0],baseCollisionShapeIndex=self.cup_coll,baseVisualShapeIndex=self.cup_vis,
+                                basePosition=[0, 0, 0.3], baseOrientation=[-0.7071068, 0, 0, 0.7071068],useMaximalCoordinates=True)
 
-            self.nugget = p.loadURDF("assets/franka_description/robots/nugget.urdf", basePosition=[0,0,0.70], baseOrientation=[0, 0, 0.7071068, 0.7071068], globalScaling=1)
+            self.table2 = p.loadURDF("assets/table_collision/table.urdf", basePosition=[-0.3,0.5,0.015], baseOrientation=[0, 0, 1, 0], globalScaling=0.3)
+            self.cup_vis = p.createVisualShape(p.GEOM_MESH, fileName="assets/scene/bowl2.stl", meshScale=meshScale, rgbaColor=[0, 0, 1, 0.85],)
+            self.cup_coll = p.createCollisionShape(p.GEOM_MESH, fileName="assets/scene/bowl2.stl", meshScale=meshScale,flags=p.GEOM_FORCE_CONCAVE_TRIMESH)
+            self.cup_2 = p.createMultiBody(baseMass=1,baseInertialFramePosition=[0, 0, 0],baseCollisionShapeIndex=self.cup_coll,baseVisualShapeIndex=self.cup_vis,
+                                basePosition=[-0.3,0.5, 0.3], baseOrientation=[-0.7071068, 0, 0, 0.7071068],useMaximalCoordinates=True)
+            self.nugget = p.loadURDF("assets/franka_description/robots/nugget.urdf", basePosition=[0,0,0.33], baseOrientation=[0, 0, 0.7071068, 0.7071068], globalScaling=1)
             # self.cup = p.loadURDF("assets/franka_description/robots/cup.urdf", 0,0,0.1, 0, 0, 0, 1)
-
+        
+        self.obstacles = [self.table1, self.cup_1, self.table2, self.cup_2, self.plane]
+        print(self.obstacles, self.franka)
+        self.collision_fn = pb_utils.get_collision_fn(self.franka, MOVABLE_JOINT_NUMBERS , self.obstacles, self_collisions=True, max_distance=0)
         helper.set_robot_to_reasonable_position(self.franka)
         for i in range(-1, 8):
             if i % 2 == 0: pb_utils.set_color(self.franka, link=i, color=(0.4, 0.4, 0.4, 1))
@@ -75,6 +83,11 @@ class Robot:
     def get_item_pose(self, obj):
         return helper.get_obj_com_pose(obj)
 
+    def check_pose_for_collision(self, robot, pos, rot=FIXED_ROTATION):
+        desired_joints = helper.inverse_kinematics(robot, pos, rot)
+        collision = self.collision_fn([np.radians(p) for p in desired_joints])
+        return collision
+
     def go_to_position(self, robot, pos, rot = FIXED_ROTATION):
         desired_joints = helper.inverse_kinematics(robot, pos, rot)
         helper.control_joints(robot, MOVABLE_JOINT_NUMBERS, desired_joints, velocity_scale=1)
@@ -85,7 +98,7 @@ class Robot:
         return ori
         
     def go_to_object(self, robot, obj, offset = 0.0):
-        chopstick_tf_matrix = np.array(np.vstack((np.hstack([np.eye(3), [[-0.015], [0], [0.205]]]), [0,0,0,1])))
+        chopstick_tf_matrix = np.array(np.vstack((np.hstack([np.eye(3), [[-0.015], [0], [0.21]]]), [0,0,0,1])))
         ee_pose = helper.get_gripper_position(robot)
         ee_rot_matrix = pb_utils.matrix_from_tform(pb_utils.tform_from_pose(ee_pose))
         chopstick_tf_matrix[:3, :3] = ee_rot_matrix

@@ -77,7 +77,7 @@ def control_joint_positions(body, joints, positions, velocities=None, interpolat
         pb_utils.control_joints(body, joints, pt, **kwargs)
         wait_simulate_for_duration(time_to_run / len(waypoints))
 
-def control_joints(body, joints, positions, velocities=None, interpolate=10, **kwargs):
+def control_joints(body, joints, positions, velocities=None, interpolate=20, **kwargs):
     control_joint_positions(body, joints, [np.radians(p) for p in positions], velocities, interpolate=interpolate, **kwargs)
 
 def get_obj_com_pose(object, sim_id = pb_utils.CLIENT):
