@@ -31,7 +31,7 @@ def inverse_kinematics(object_index, position, rotation):
     info = IKFastInfo(module_name='franka_panda.ikfast_panda_arm', base_link='panda_link0', ee_link='panda_link7',
                       free_joints=['panda_joint6'])
     ik_joints = get_ik_joints(object_index, info, tool_link)
-    pb_kwargs = {"pos_tolerance": 1e-3, "ori_tolerance": 3.14*1e-3, "max_attempts": 5,
+    pb_kwargs = {"pos_tolerance": 1e-5, "ori_tolerance": 3.14*1e-5, "max_attempts": 10,
                  "max_time": 500000000, "fixed_joints": []}
     if True: #with pb_utils.LockRenderer():
         conf = next(either_inverse_kinematics(object_index, info, tool_link, goal_ee_pose, use_pybullet=True, **pb_kwargs),None)
@@ -41,7 +41,8 @@ def inverse_kinematics(object_index, position, rotation):
         # sys.exit()
         return None
     else:
-        return [np.degrees(a) for a in conf]
+        return conf
+        # return [np.degrees(a) for a in conf]
 
 def get_quat(theta):
     # theta = theta/180*np.pi
@@ -79,6 +80,9 @@ def control_joint_positions(body, joints, positions, velocities=None, interpolat
 
 def control_joints(body, joints, positions, velocities=None, interpolate=20, **kwargs):
     control_joint_positions(body, joints, [np.radians(p) for p in positions], velocities, interpolate=interpolate, **kwargs)
+
+def control_joints_rad(body, joints, positions, velocities=None, interpolate=20, **kwargs):
+    control_joint_positions(body, joints, [p for p in positions], velocities, interpolate=interpolate, **kwargs)
 
 def get_obj_com_pose(object, sim_id = pb_utils.CLIENT):
     return np.array(pb_utils.get_com_pose(object, -1))
